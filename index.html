@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-Map Solver | Digital Logic</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a14;
+    --surface: #0a1628;
+    --card: #0d1e35;
+    --border: #1a3a5c;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #39ff14;
+    --text: #e0f0ff;
+    --text-dim: #6a90b8;
+    --glow: 0 0 20px rgba(0,212,255,0.4);
+    --glow2: 0 0 20px rgba(57,255,20,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 20s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes gridMove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(40px); }
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    background: linear-gradient(135deg, #050a14 0%, #0a1628 50%, #050a14 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0;
+    border-bottom: 1px solid rgba(0,212,255,0.1);
+  }
+
+  .univ-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+.univ-logo {
+  width: 130px;        /* rectangle width */
+  height: auto;        /* maintain ratio */
+  border-radius: 6px;  /* halka curve */
+  object-fit: contain;
+  border: 1.5px solid var(--accent);
+  box-shadow: var(--glow);
+  background: #ffffff; /* agar logo dark ho to visible rahe */
+  padding: 4px;
+}
+
+  .univ-info h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .univ-info p {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .student-info { text-align: right; }
+
+  .student-info .name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+
+  .student-info .enroll {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .header-bottom {
+    padding: 14px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .site-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .site-title span { color: var(--accent); }
+
+  main {
+    position: relative;
+    z-index: 5;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 24px;
+  }
+
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent2);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .section-heading {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 30px;
+  }
+
+  .var-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+  }
+
+  .var-btn {
+    flex: 1;
+    min-width: 140px;
+    padding: 16px 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .var-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    transition: left 0.4s;
+  }
+
+  .var-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .var-btn:hover::before { left: 100%; }
+
+  .var-btn.active {
+    background: rgba(0,212,255,0.08);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: var(--glow), inset 0 0 30px rgba(0,212,255,0.05);
+  }
+
+  .var-btn .sub { font-size: 11px; color: var(--text-dim); display: block; margin-top: 2px; letter-spacing: 1px; font-weight: 400; }
+
+  .kmap-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 30px;
+  }
+
+  @media(max-width: 750px) { .kmap-container { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+  }
+
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .kmap-wrap {
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  table.kmap {
+    border-collapse: collapse;
+    margin: 0 auto;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  table.kmap th {
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    font-weight: 400;
+    letter-spacing: 1px;
+  }
+
+  table.kmap td {
+    border: 1px solid var(--border);
+    width: 52px;
+    height: 52px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    color: var(--text-dim);
+  }
+
+  table.kmap td:hover { background: rgba(0,212,255,0.06); }
+
+  table.kmap td.one {
+    background: rgba(57,255,20,0.12);
+    color: var(--accent3);
+    font-weight: 700;
+    box-shadow: inset 0 0 12px rgba(57,255,20,0.1);
+  }
+
+  table.kmap td .mindex {
+    position: absolute;
+    top: 2px; left: 4px;
+    font-size: 9px;
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .result-panel {
+    grid-column: 1 / -1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .expr-box {
+    background: var(--surface);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    color: var(--accent3);
+    margin: 10px 0;
+    letter-spacing: 2px;
+    box-shadow: var(--glow2);
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+  }
+
+  .gates-area { margin-top: 20px; }
+
+  .gate-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  svg.gates { width: 100%; overflow: visible; }
+
+  .mint-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .mint-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    user-select: none;
+  }
+
+  .mint-item .mi { font-size: 10px; display: block; margin-bottom: 2px; }
+  .mint-item .mv { font-size: 14px; font-weight: 700; color: var(--text-dim); }
+
+  .mint-item.sel {
+    background: rgba(57,255,20,0.1);
+    border-color: var(--accent3);
+    color: var(--accent3);
+    box-shadow: 0 0 8px rgba(57,255,20,0.2);
+  }
+
+  .mint-item.sel .mv { color: var(--accent3); }
+
+  .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+
+  .btn {
+    padding: 12px 28px;
+    border: 1px solid var(--accent);
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover {
+    background: rgba(0,212,255,0.18);
+    box-shadow: var(--glow);
+  }
+
+  .btn.danger {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(255,107,53,0.06);
+  }
+
+  .btn.danger:hover { background: rgba(255,107,53,0.15); box-shadow: 0 0 20px rgba(255,107,53,0.3); }
+
+  .info-box {
+    background: rgba(0,212,255,0.04);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .info-box strong { color: var(--accent); }
+
+  footer {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    padding: 30px 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 60px;
+  }
+
+  .footer-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  .copyright {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .pulsar {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent3);
+    border-radius: 50%;
+    margin: 0 8px;
+    animation: pulse 1.5s ease-in-out infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.6); }
+  }
+
+  .fade-in { animation: fadeIn 0.5s ease forwards; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="univ-brand">
+        
+     <img src="c:\Users\HARSH\Pictures\Screenshots\Screenshot 2026-04-23 195754.png" alt="University Logo" class="univ-logo">  <!-- ← Yahan apni university ka short naam daalo -->
+      <div class="univ-info">
+        <h1>MARWADI UNIVERSITY</h1>  <!-- ← University ka poora naam -->
+        <p>Rajkot, Gujarat, India — 360003</p>
+        <p style="margin-top:4px; color:var(--accent2); font-size:11px; letter-spacing:1px;">Department of Information & Communication Technology</p>
+      </div>
+    </div>
+    <div class="student-info">
+      <div class="name">HARSH C. PARMAR</div>   <!-- ← Apna naam -->
+      <div class="enroll">Enrollment No: <span style="color:var(--accent)">92500133012</span></div>  <!-- ← Enrollment number -->
+      <div class="badge">B.TECH. — Sem II</div>
+    </div>
+  </div>
+  <div class="header-bottom">
+    <span class="pulsar"></span>
+    <span class="site-title">ICTian_K-<span>Map</span> Solver</span>
+    <span class="pulsar"></span>
+  </div>
+</header>
+
+<main>
+  <div class="section-title">// digital logic design</div>
+  <div class="section-heading">Karnaugh Map Minimizer</div>
+
+  <div class="var-selector">
+    <button class="var-btn" onclick="setVars(2)" id="btn2">
+      2-Variable
+      <span class="sub">Variables: A, B &nbsp;|&nbsp; 4 Minterms</span>
+    </button>
+    <button class="var-btn active" onclick="setVars(3)" id="btn3">
+      3-Variable
+      <span class="sub">Variables: A, B, C &nbsp;|&nbsp; 8 Minterms</span>
+    </button>
+    <button class="var-btn" onclick="setVars(4)" id="btn4">
+      4-Variable
+      <span class="sub">Variables: A, B, C, D &nbsp;|&nbsp; 16 Minterms</span>
+    </button>
+  </div>
+
+  <div class="kmap-container" id="kmapArea"></div>
+
+  <div class="result-panel fade-in" id="resultPanel" style="display:none;">
+    <div class="card-title">// Simplified Boolean Expression (SOP)</div>
+    <div class="expr-box" id="exprBox">—</div>
+    <div class="gates-area">
+      <div class="gate-label">// Logic Gate Diagram</div>
+      <div id="gatesDiagram"></div>
+    </div>
+    <div class="info-box" id="infoBox"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-name">HARSH C.PARMAR &nbsp;|&nbsp; MARWADI UNIVERSITY</div>  <!-- ← Change karo -->
+  <div class="copyright">
+    <span class="pulsar"></span>
+    &copy; <span id="yr"></span> Enrollment: 92500133012 &nbsp;·&nbsp; Digital Logic Design Project &nbsp;·&nbsp; All Rights Reserved
+    <span class="pulsar"></span>
+  </div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+let currentVars = 3;
+let cells = {};
+
+function setVars(n) {
+  currentVars = n;
+  cells = {};
+  document.querySelectorAll('.var-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn'+n).classList.add('active');
+  document.getElementById('resultPanel').style.display = 'none';
+  renderKmap();
+}
+
+function renderKmap() {
+  const area = document.getElementById('kmapArea');
+  area.innerHTML = '';
+
+  const kcard = document.createElement('div');
+  kcard.className = 'card fade-in';
+  kcard.innerHTML = `<div class="card-title">// Karnaugh Map — Click cells to toggle 0/1</div>
+    <div class="kmap-wrap" id="kmapTable"></div>`;
+  area.appendChild(kcard);
+
+  const mcard = document.createElement('div');
+  mcard.className = 'card fade-in';
+  mcard.innerHTML = `<div class="card-title">// Minterm Selector</div>
+    <div class="mint-grid" id="mintGrid"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="solveKmap()">▶ Solve &amp; Simplify</button>
+      <button class="btn danger" onclick="clearAll()">↺ Clear All</button>
+    </div>`;
+  area.appendChild(mcard);
+
+  buildTable();
+  buildMintGrid();
+}
+
+function buildTable() {
+  const wrap = document.getElementById('kmapTable');
+  let html = '';
+  const n = currentVars;
+
+  if(n === 2) {
+    html = `<table class="kmap">
+      <tr><th>A \\ B</th><th>0</th><th>1</th></tr>`;
+    for(let a=0;a<2;a++) {
+      html += `<tr><th>${a}</th>`;
+      for(let b=0;b<2;b++) {
+        const idx = a*2+b;
+        html += `<td id="c${idx}" onclick="toggleCell(${idx})" class="${cells[idx]===1?'one':''}">
+          <span class="mindex">${idx}</span>${cells[idx]===1?'1':'0'}</td>`;
+      }
+      html += '</tr>';
+    }
+    html += '</table>';
+  }
+
+  if(n === 3) {
+    const cols = ['00','01','11','10'];
+    html = `<table class="kmap">
+      <tr><th>A \\ BC</th><th>00</th><th>01</th><th>11</th><th>10</th></tr>`;
+    for(let a=0;a<2;a++) {
+      html += `<tr><th>${a}</th>`;
+      for(const bc of cols) {
+        const idx = parseInt(`${a}${bc}`,2);
+        html += `<td id="c${idx}" onclick="toggleCell(${idx})" class="${cells[idx]===1?'one':''}">
+          <span class="mindex">${idx}</span>${cells[idx]===1?'1':'0'}</td>`;
+      }
+      html += '</tr>';
+    }
+    html += '</table>';
+  }
+
+  if(n === 4) {
+    const rc = ['00','01','11','10'];
+    html = `<table class="kmap">
+      <tr><th>AB \\ CD</th><th>00</th><th>01</th><th>11</th><th>10</th></tr>`;
+    for(const ab of rc) {
+      html += `<tr><th>${ab}</th>`;
+      for(const cd of rc) {
+        const idx = parseInt(`${ab}${cd}`,2);
+        html += `<td id="c${idx}" onclick="toggleCell(${idx})" class="${cells[idx]===1?'one':''}">
+          <span class="mindex">${idx}</span>${cells[idx]===1?'1':'0'}</td>`;
+      }
+      html += '</tr>';
+    }
+    html += '</table>';
+  }
+
+  wrap.innerHTML = html;
+}
+
+function buildMintGrid() {
+  const n = currentVars;
+  const count = Math.pow(2, n);
+  let html = '';
+  for(let i=0;i<count;i++) {
+    const binary = i.toString(2).padStart(n,'0');
+    html += `<div class="mint-item ${cells[i]===1?'sel':''}" id="m${i}" onclick="toggleCell(${i})">
+      <span class="mi">m${i}</span>
+      <span class="mv">${binary}</span>
+    </div>`;
+  }
+  document.getElementById('mintGrid').innerHTML = html;
+}
+
+function toggleCell(idx) {
+  cells[idx] = cells[idx]===1 ? 0 : 1;
+  const td = document.getElementById('c'+idx);
+  if(td) {
+    td.className = cells[idx]===1 ? 'one' : '';
+    td.innerHTML = `<span class="mindex">${idx}</span>${cells[idx]===1?'1':'0'}`;
+  }
+  const mi = document.getElementById('m'+idx);
+  if(mi) mi.className = `mint-item ${cells[idx]===1?'sel':''}`;
+}
+
+function clearAll() {
+  cells = {};
+  buildTable();
+  buildMintGrid();
+  document.getElementById('resultPanel').style.display = 'none';
+}
+
+function solveKmap() {
+  const n = currentVars;
+  const count = Math.pow(2, n);
+  const minterms = [];
+  for(let i=0;i<count;i++) { if(cells[i]===1) minterms.push(i); }
+
+  if(minterms.length === 0) {
+    showResult('F = 0', [], 'No minterms selected. Output is always 0.');
+    return;
+  }
+  if(minterms.length === count) {
+    showResult('F = 1', [], 'All minterms selected. Output is always 1.');
+    return;
+  }
+
+  const vars = n===2?['A','B']:n===3?['A','B','C']:['A','B','C','D'];
+  const primeImplicants = findPrimeImplicants(minterms, n);
+  const essential = findEssentialPI(primeImplicants, minterms);
+  const expr = groupsToExpr(essential, vars);
+
+  const infoText = `<strong>Selected Minterms:</strong> Σm(${minterms.join(', ')})<br>
+  <strong>Prime Implicants Found:</strong> ${primeImplicants.length}<br>
+  <strong>Essential Groups Used:</strong> ${essential.length}`;
+
+  showResult(expr, essential, infoText);
+}
+
+function findPrimeImplicants(minterms, n) {
+  let groups = minterms.map(m => ({ 
+    terms: [m], 
+    binary: m.toString(2).padStart(n,'0'),
+    used: false 
+  }));
+  let allPI = [];
+
+  while(groups.length > 0) {
+    const next = [];
+    for(let i=0;i<groups.length;i++) {
+      for(let j=i+1;j<groups.length;j++) {
+        const combined = tryMerge(groups[i].binary, groups[j].binary);
+        if(combined !== null) {
+          groups[i].used = true;
+          groups[j].used = true;
+          const newTerms = [...new Set([...groups[i].terms, ...groups[j].terms])];
+          if(!next.some(x => x.binary === combined && arrEqual(x.terms.sort(), newTerms.sort()))) {
+            next.push({ terms: newTerms, binary: combined, used: false });
+          }
+        }
+      }
+    }
+    groups.forEach(g => { if(!g.used) allPI.push(g); });
+    groups = next;
+  }
+
+  const seen = new Set();
+  return allPI.filter(p => {
+    const key = p.binary;
+    if(seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+}
+
+function tryMerge(a, b) {
+  let diff = 0, pos = -1;
+  for(let i=0;i<a.length;i++) {
+    if(a[i] !== b[i]) { diff++; pos = i; }
+    if(a[i] === '-' && b[i] !== '-') return null;
+    if(b[i] === '-' && a[i] !== '-') return null;
+  }
+  if(diff === 1) return a.substring(0,pos) + '-' + a.substring(pos+1);
+  return null;
+}
+
+function arrEqual(a,b) { return a.length===b.length && a.every((v,i)=>v===b[i]); }
+
+function findEssentialPI(pis, minterms) {
+  const coverage = {};
+  minterms.forEach(m => coverage[m] = []);
+  pis.forEach((pi,idx) => {
+    pi.terms.forEach(t => { if(coverage[t] !== undefined) coverage[t].push(idx); });
+  });
+
+  const essential = new Set();
+  const covered = new Set();
+
+  minterms.forEach(m => {
+    if(coverage[m] && coverage[m].length === 1) {
+      const idx = coverage[m][0];
+      essential.add(idx);
+      pis[idx].terms.forEach(t => covered.add(t));
+    }
+  });
+
+  const remaining = minterms.filter(m => !covered.has(m));
+  remaining.forEach(m => {
+    if(coverage[m] && coverage[m].length > 0) {
+      const best = coverage[m].reduce((a,b) => pis[a].terms.length >= pis[b].terms.length ? a : b);
+      essential.add(best);
+      pis[best].terms.forEach(t => covered.add(t));
+    }
+  });
+
+  return [...essential].map(i => pis[i]);
+}
+
+function groupsToExpr(groups, vars) {
+  if(groups.length === 0) return 'F = 0';
+  const terms = groups.map(g => {
+    const parts = [];
+    for(let i=0;i<g.binary.length;i++) {
+      if(g.binary[i] === '0') parts.push(vars[i] + "'");
+      else if(g.binary[i] === '1') parts.push(vars[i]);
+    }
+    return parts.join('·') || '1';
+  });
+  return 'F = ' + terms.join(' + ');
+}
+
+function showResult(expr, groups, info) {
+  const panel = document.getElementById('resultPanel');
+  panel.style.display = 'block';
+  panel.className = 'result-panel fade-in';
+  document.getElementById('exprBox').textContent = expr;
+  document.getElementById('infoBox').innerHTML = info;
+  renderGates(expr, groups);
+}
+
+function renderGates(expr, groups) {
+  const area = document.getElementById('gatesDiagram');
+  if(expr === 'F = 0' || expr === 'F = 1') {
+    area.innerHTML = `<div style="color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:14px;padding:12px 0;">${expr === 'F = 1' ? 'Tautology — Always HIGH (VCC)' : 'Contradiction — Always LOW (GND)'}</div>`;
+    return;
+  }
+
+  const raw = expr.replace('F = ','');
+  const terms = raw.split(' + ').map(t => t.split('·'));
+  const W = 700, H = Math.max(160, terms.length * 80 + 80);
+  const gateW = 60, gateH = 36;
+  const colors = { gate: '#0d1e35', accent: '#00d4ff', accent3: '#39ff14', dim: '#6a90b8' };
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="gates" style="max-height:${H}px;">
+  <defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+
+  const orInputs = [];
+
+  terms.forEach((term, ti) => {
+    const y = 50 + ti * 75;
+    const inputX = 40;
+    const inputCount = term.length;
+
+    term.forEach((lit, li) => {
+      const iy = y + li*(gateH/Math.max(inputCount,1)) + (gateH/(2*Math.max(inputCount,1)));
+      const varName = lit.replace("'",'');
+      const isInverted = lit.endsWith("'");
+      svg += `<text x="${inputX}" y="${iy+5}" fill="${isInverted ? colors.accent : colors.accent3}" font-family="'Share Tech Mono',monospace" font-size="13">${isInverted ? varName+"'" : varName}</text>`;
+      svg += `<line x1="${inputX+20}" y1="${iy}" x2="${200}" y2="${y + gateH/2 + (li - (inputCount-1)/2)*8}" stroke="${colors.dim}" stroke-width="1.5"/>`;
+    });
+
+    const ax = 200;
+    svg += `<path d="M${ax},${y} L${ax+gateW*0.5},${y} Q${ax+gateW},${y} ${ax+gateW},${y+gateH/2} Q${ax+gateW},${y+gateH} ${ax+gateW*0.5},${y+gateH} L${ax},${y+gateH} Z"
+      fill="${colors.gate}" stroke="${colors.accent}" stroke-width="1.5" filter="url(#glow)"/>`;
+    svg += `<text x="${ax+gateW*0.35}" y="${y+gateH/2+5}" fill="${colors.accent}" font-family="'Orbitron',sans-serif" font-size="9" font-weight="600">AND</text>`;
+
+    const outX = ax + gateW;
+    svg += `<line x1="${outX}" y1="${y+gateH/2}" x2="${outX+30}" y2="${y+gateH/2}" stroke="${colors.accent3}" stroke-width="1.5"/>`;
+    orInputs.push({ x: outX+30, y: y+gateH/2 });
+  });
+
+  const orX = 360;
+  const orCY = H/2;
+  const orH = Math.max(50, terms.length * 20);
+  const orY = orCY - orH/2;
+
+  if(terms.length > 1) {
+    orInputs.forEach((inp, i) => {
+      const iy = orY + (i+1)*(orH/(terms.length+1));
+      svg += `<line x1="${inp.x}" y1="${inp.y}" x2="${orX}" y2="${iy}" stroke="${colors.dim}" stroke-width="1.5"/>`;
+    });
+    svg += `<path d="M${orX},${orY} Q${orX+20},${orCY} ${orX},${orY+orH} Q${orX+orH*0.5},${orY+orH} ${orX+80},${orCY} Q${orX+orH*0.5},${orY} ${orX},${orY} Z"
+      fill="${colors.gate}" stroke="${colors.accent}" stroke-width="1.5" filter="url(#glow)"/>`;
+    svg += `<text x="${orX+22}" y="${orCY+5}" fill="${colors.accent}" font-family="'Orbitron',sans-serif" font-size="9" font-weight="600">OR</text>`;
+    svg += `<line x1="${orX+80}" y1="${orCY}" x2="${orX+120}" y2="${orCY}" stroke="${colors.accent3}" stroke-width="2"/>`;
+    svg += `<text x="${orX+125}" y="${orCY+5}" fill="${colors.accent3}" font-family="'Share Tech Mono',monospace" font-size="14" font-weight="700">F</text>`;
+  } else {
+    svg += `<line x1="${orInputs[0].x}" y1="${orInputs[0].y}" x2="${orInputs[0].x+60}" y2="${orInputs[0].y}" stroke="${colors.accent3}" stroke-width="2"/>`;
+    svg += `<text x="${orInputs[0].x+65}" y="${orInputs[0].y+5}" fill="${colors.accent3}" font-family="'Share Tech Mono',monospace" font-size="14" font-weight="700">F</text>`;
+  }
+
+  svg += '</svg>';
+  area.innerHTML = svg;
+}
+
+setVars(3);
+</script>
+</body>
+</html>
